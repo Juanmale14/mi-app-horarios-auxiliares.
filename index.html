@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Horarios - Auxiliares de Conversación</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            background: none;
+            border: none;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: white;
+            color: #4facfe;
+            border-bottom: 3px solid #4facfe;
+        }
+
+        .tab:hover:not(.active) {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 1.1rem;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        input, select, button {
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #757f9a 0%, #d7dde8 100%);
+        }
+
+        .auxiliar-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 5px solid #4facfe;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .auxiliar-card h3 {
+            color: #4facfe;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .grupo-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 5px solid #28a745;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .grupo-card h3 {
+            color: #28a745;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            text-align: center;
+        }
+
+        .horario-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .hora-label {
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: 600;
+            color: #1976d2;
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .auxiliar-select {
+            padding: 8px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            background: white;
+        }
+
+        .auxiliar-select:focus {
+            outline: none;
+            border-color: #28a745;
+            box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.1);
+        }
+
+        .grupos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .schedule-table th,
+        .schedule-table td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .schedule-table th {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .schedule-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .schedule-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .time-slot {
+            background: #e3f2fd;
+            font-weight: 600;
+            color: #1976d2;
+        }
+
+        .assigned {
+            background: #e8f5e8;
+            color: #2e7d32;
+            font-weight: 500;
+        }
+
+        .empty {
+            background: #fff3e0;
+            color: #f57c00;
+            font-style: italic;
+        }
+
+        .export-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .export-section h3 {
+            margin-bottom: 15px;
+            color: #495057;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .schedule-table {
+                font-size: 0.9rem;
+            }
+            
+            .schedule-table th,
+            .schedule-table td {
+                padding: 10px 5px;
+            }
+        }
+    </style>
+<style type="text/css">
+.grande { font-size: 60px; }
+</style>
+<script>
+// Escribir aqui el código Javascript
+</script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 Generador de Horarios</h1>
+            <p>Sistema de gestión para Auxiliares de Conversación</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('auxiliares', event)">👥 Auxiliares</button>
+            <button class="tab" onclick="showTab('horarios', event)">🕐 Horarios</button>
+            <button class="tab" onclick="showTab('exportar', event)">📊 Exportar</button>
+        </div>
+
+        <!-- Tab: Auxiliares -->
+        <div id="auxiliares" class="tab-content active">
+            <h2>Gestión de Auxiliares de Conversación</h2>
+            
+            <div class="form-group">
+                <label>Agregar Nuevo Auxiliar</label>
+                <div class="form-row">
+                    <input type="text" id="auxiliarNombre" placeholder="Nombre completo" style="flex: 2;">
+                    <input type="number" id="auxiliarHoras" placeholder="Horas/semana" min="1" max="40" style="flex: 1;">
+                    <button class="btn btn-success" onclick="agregarAuxiliar()">➕ Agregar</button>
+                </div>
+            </div>
+
+            <div id="listaAuxiliares">
+                <!-- Los auxiliares se mostrarán aquí -->
+            </div>
+        </div>
+
+        <!-- Tab: Horarios -->
+        <div id="horarios" class="tab-content">
+            <h2>Asignación de Horarios por Grupos</h2>
+            
+            <div id="gruposContainer">
+                <!-- Los grupos se generarán aquí -->
+            </div>
+        </div>
+
+        <!-- Tab: Exportar -->
+        <div id="exportar" class="tab-content">
+            <h2>Exportar Horarios</h2>
+            
+            <div class="export-section">
+                <h3>📋 Opciones de Exportación</h3>
+                <p>Descarga los horarios generados en diferentes formatos</p>
+                
+                <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <button class="btn btn-success" onclick="exportarGruposPDF()">📄 Exportar horarios de grupos a PDF</button>
+                    <button class="btn btn-success" onclick="exportarGruposExcel()">📊 Exportar horarios de grupos a Excel</button>
+                    <button class="btn" onclick="exportarAuxiliaresPDF()">📄 Exportar horarios de auxiliares a PDF</button>
+                    <button class="btn" onclick="exportarAuxiliaresExcel()">📊 Exportar horarios de auxiliares a Excel</button>
+                </div>
+            </div>
+
+            <div id="resumenExportacion">
+                <!-- Resumen de exportación -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- VARIABLES GLOBALES Y DATOS ---
+        let auxiliares = [];
+        const grupos = ['1º A', '1º B', '1º C', '1º D', '2º A', '2º B', '2º C', '2º D', 
+                        '3º A', '3º B', '3º C', '3º D', '4º A', '4º B', '4º C', '4º D'];
+        const horas = ['1ª hora', '2ª hora', '3ª hora', '4ª hora', '5ª hora', '6ª hora'];
+
+        // --- GESTIÓN DE LA INTERFAZ (TABS) ---
+        function showTab(tabName, event) {
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // --- LÓGICA DE AUXILIARES ---
+        function agregarAuxiliar() {
+            const nombreInput = document.getElementById('auxiliarNombre');
+            const horasInput = document.getElementById('auxiliarHoras');
+            const nombre = nombreInput.value.trim();
+            const horas = parseInt(horasInput.value);
+
+            if (!nombre || !horas) {
+                alert('Por favor, completa todos los campos.');
+                return;
+            }
+
+            const auxiliar = { id: Date.now(), nombre, horasSemanales: horas, horasAsignadas: 0 };
+            auxiliares.push(auxiliar);
+            actualizarListaAuxiliares();
+            nombreInput.value = '';
+            horasInput.value = '';
+            generarGrupos();
+        }
+
+        function actualizarListaAuxiliares() {
+            const lista = document.getElementById('listaAuxiliares');
+            if (auxiliares.length === 0) {
+                lista.innerHTML = '<div class="alert alert-info">No hay auxiliares registrados.</div>';
+                return;
+            }
+            lista.innerHTML = auxiliares.map(aux => `
+                <div class="auxiliar-card">
+                    <h3>${aux.nombre}</h3>
+                    <p><strong>Horas semanales:</strong> ${aux.horasSemanales}h</p>
+                    <button class="btn btn-danger" onclick="eliminarAuxiliar(${aux.id})">🗑️ Eliminar</button>
+                </div>
+            `).join('');
+        }
+
+        function eliminarAuxiliar(id) {
+            if (confirm('¿Estás seguro de que quieres eliminar este auxiliar? Se desasignarán sus horas.')) {
+                auxiliares = auxiliares.filter(aux => aux.id !== id);
+                actualizarListaAuxiliares();
+                generarGrupos();
+            }
+        }
+
+        // --- LÓGICA DE HORARIOS ---
+        function generarGrupos() {
+            const container = document.getElementById('gruposContainer');
+            let html = '<div class="grupos-grid">';
+            const opcionesAuxiliares = auxiliares.map(aux => `<option value="${aux.id}">${aux.nombre}</option>`).join('');
+
+            grupos.forEach(grupo => {
+                html += `<div class="grupo-card"><h3>${grupo}</h3><div class="horario-grid">`;
+                horas.forEach(hora => {
+                    const selectId = `${grupo.replace(/[\sºª]/g, '')}_${hora.replace(/[\sºª]/g, '')}`;
+                    html += `
+                        <div class="hora-label">${hora}</div>
+                        <select class="auxiliar-select" id="${selectId}">
+                            <option value="">Sin asignar</option>
+                            ${opcionesAuxiliares}
+                        </select>
+                    `;
+                });
+                html += `</div></div>`;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        // --- LÓGICA DE EXPORTACIÓN ---
+
+        /**
+         * Función central para leer el estado actual del horario desde el DOM.
+         * @returns {Array} Un array de objetos, cada uno representando una franja horaria.
+         * E.g., [{ grupo, hora, auxiliarId, auxiliarNombre }]
+         */
+        function obtenerDatosHorario() {
+            const horarioCompleto = [];
+            grupos.forEach(grupo => {
+                horas.forEach(hora => {
+                    const selectId = `${grupo.replace(/[\sºª]/g, '')}_${hora.replace(/[\sºª]/g, '')}`;
+                    const select = document.getElementById(selectId);
+                    const auxiliarId = select ? select.value : '';
+                    const auxiliar = auxiliares.find(aux => aux.id == auxiliarId);
+                    horarioCompleto.push({
+                        grupo: grupo,
+                        hora: hora,
+                        auxiliarId: auxiliar ? auxiliar.id : null,
+                        auxiliarNombre: auxiliar ? auxiliar.nombre : 'Sin asignar'
+                    });
+                });
+            });
+            return horarioCompleto;
+        }
+
+        // 1. Exportar Horarios de Grupos a PDF
+        function exportarGruposPDF() {
+            if (auxiliares.length === 0) {
+                alert('Primero debes agregar auxiliares.');
+                return;
+            }
+            const horarioData = obtenerDatosHorario();
+            const horariosPorGrupo = horarioData.reduce((acc, curr) => {
+                (acc[curr.grupo] = acc[curr.grupo] || []).push(curr);
+                return acc;
+            }, {});
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            let yPosition = 20;
+            doc.setFontSize(18).setFont(undefined, 'bold').text('HORARIOS POR GRUPOS', 105, yPosition, { align: 'center' });
+            yPosition += 15;
+
+            for (const grupo in horariosPorGrupo) {
+                if (yPosition > 240) {
+                    doc.addPage();
+                    yPosition = 20;
+                }
+                doc.setFontSize(14).setFont(undefined, 'bold').text(`GRUPO: ${grupo}`, 14, yPosition);
+                yPosition += 10;
+                const tableBody = horariosPorGrupo[grupo].map(slot => [slot.hora, slot.auxiliarNombre]);
+                doc.autoTable({
+                    startY: yPosition,
+                    head: [['Hora', 'Auxiliar Asignado']],
+                    body: tableBody,
+                    theme: 'striped',
+                    headStyles: { fillColor: [79, 172, 254], fontStyle: 'bold' },
+                    margin: { left: 14 }
+                });
+                yPosition = doc.lastAutoTable.finalY + 15;
+            }
+            doc.save('horarios_por_grupos.pdf');
+            mostrarMensajeExportacion('PDF de grupos', 'success');
+        }
+
+        // 2. Exportar Horarios de Grupos a Excel
+        function exportarGruposExcel() {
+            if (auxiliares.length === 0) {
+                alert('Primero debes agregar auxiliares.');
+                return;
+            }
+            const horarioData = obtenerDatosHorario();
+            const horariosPorGrupo = horarioData.reduce((acc, curr) => {
+                (acc[curr.grupo] = acc[curr.grupo] || []).push(curr);
+                return acc;
+            }, {});
+
+            const wb = XLSX.utils.book_new();
+            for (const grupo in horariosPorGrupo) {
+                const sheetData = [
+                    [`Horario del Grupo: ${grupo}`],
+                    [],
+                    ['Hora', 'Auxiliar Asignado'],
+                    ...horariosPorGrupo[grupo].map(slot => [slot.hora, slot.auxiliarNombre])
+                ];
+                const ws = XLSX.utils.aoa_to_sheet(sheetData);
+                ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 1 } }];
+                ws['!cols'] = [{ wch: 15 }, { wch: 30 }];
+                const sheetName = grupo.replace(/[^a-zA-Z0-9]/g, '').substring(0, 31);
+                XLSX.utils.book_append_sheet(wb, ws, sheetName);
+            }
+            XLSX.writeFile(wb, 'horarios_por_grupos.xlsx');
+            mostrarMensajeExportacion('Excel de grupos', 'success');
+        }
+
+        // 3. Exportar Horarios de Auxiliares a PDF
+        function exportarAuxiliaresPDF() {
+            if (auxiliares.length === 0) {
+                alert('Primero debes agregar auxiliares.');
+                return;
+            }
+            const horarioData = obtenerDatosHorario().filter(slot => slot.auxiliarId);
+            const horariosPorAuxiliar = horarioData.reduce((acc, curr) => {
+                (acc[curr.auxiliarId] = acc[curr.auxiliarId] || []).push(curr);
+                return acc;
+            }, {});
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            let yPosition = 20;
+            doc.setFontSize(18).setFont(undefined, 'bold').text('HORARIOS POR AUXILIARES', 105, yPosition, { align: 'center' });
+            yPosition += 15;
+
+            auxiliares.forEach(auxiliar => {
+                if (yPosition > 240) {
+                    doc.addPage();
+                    yPosition = 20;
+                }
+                doc.setFontSize(14).setFont(undefined, 'bold').text(`Auxiliar: ${auxiliar.nombre}`, 14, yPosition);
+                yPosition += 10;
+                const susAsignaciones = horariosPorAuxiliar[auxiliar.id] || [];
+                if (susAsignaciones.length > 0) {
+                    const tableBody = susAsignaciones.map(slot => [slot.grupo, slot.hora]);
+                    doc.autoTable({
+                        startY: yPosition,
+                        head: [['Grupo', 'Hora']],
+                        body: tableBody,
+                        theme: 'striped',
+                        headStyles: { fillColor: [40, 167, 69], fontStyle: 'bold' },
+                        margin: { left: 14 }
+                    });
+                    yPosition = doc.lastAutoTable.finalY + 15;
+                } else {
+                    doc.setFontSize(10).text('Este auxiliar no tiene horas asignadas.', 14, yPosition);
+                    yPosition += 15;
+                }
+            });
+            doc.save('horarios_por_auxiliares.pdf');
+            mostrarMensajeExportacion('PDF de auxiliares', 'success');
+        }
+
+        // 4. Exportar Horarios de Auxiliares a Excel
+        function exportarAuxiliaresExcel() {
+            if (auxiliares.length === 0) {
+                alert('Primero debes agregar auxiliares.');
+                return;
+            }
+            const horarioData = obtenerDatosHorario().filter(slot => slot.auxiliarId);
+            const horariosPorAuxiliar = horarioData.reduce((acc, curr) => {
+                (acc[curr.auxiliarId] = acc[curr.auxiliarId] || []).push(curr);
+                return acc;
+            }, {});
+
+            const wb = XLSX.utils.book_new();
+            auxiliares.forEach(auxiliar => {
+                const susAsignaciones = horariosPorAuxiliar[auxiliar.id] || [];
+                const sheetData = [
+                    [`Horario de: ${auxiliar.nombre}`],
+                    [],
+                    ['Grupo', 'Hora'],
+                    ...susAsignaciones.map(slot => [slot.grupo, slot.hora])
+                ];
+                if (susAsignaciones.length === 0) {
+                    sheetData.push(['Este auxiliar no tiene horas asignadas.']);
+                }
+                const ws = XLSX.utils.aoa_to_sheet(sheetData);
+                ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 1 } }];
+                if (susAsignaciones.length === 0) {
+                    ws['!merges'].push({ s: { r: 3, c: 0 }, e: { r: 3, c: 1 } });
+                }
+                ws['!cols'] = [{ wch: 20 }, { wch: 20 }];
+                const sheetName = auxiliar.nombre.replace(/[^a-zA-Z0-9]/g, '').substring(0, 31);
+                XLSX.utils.book_append_sheet(wb, ws, sheetName);
+            });
+            XLSX.writeFile(wb, 'horarios_por_auxiliares.xlsx');
+            mostrarMensajeExportacion('Excel de auxiliares', 'success');
+        }
+
+        function mostrarMensajeExportacion(tipo, estado) {
+            const container = document.getElementById('resumenExportacion');
+            const claseAlerta = estado === 'success' ? 'alert-success' : 'alert-warning';
+            const icono = estado === 'success' ? '✅' : '⚠️';
+            container.innerHTML = `<div class="alert ${claseAlerta}">${icono} Exportación a ${tipo} completada.</div>`;
+            setTimeout(() => { container.innerHTML = ''; }, 4000);
+        }
+
+        // --- INICIALIZACIÓN ---
+        document.addEventListener('DOMContentLoaded', function() {
+            actualizarListaAuxiliares();
+            generarGrupos();
+        });
+    </script>
+
+
+
+</body></html>
